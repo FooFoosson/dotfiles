@@ -1,14 +1,12 @@
-set nocompatible              " be iMproved, required
 filetype off                  " required
 set clipboard=unnamedplus
 set number
+set nocompatible              " be iMproved, required
 " set the runtime path to include Vundle and initialize
 set rtp+=~/.vim/bundle/Vundle.vim
 call vundle#begin()
 
 Plugin 'VundleVim/Vundle.vim'
-
-Plugin 'tpope/vim-fugitive'
 
 Plugin 'valloric/youcompleteme'
 set completeopt-=preview
@@ -33,8 +31,8 @@ Plugin 'Chiel92/vim-autoformat'
 "au BufWrite * :Autoformat
 
 call vundle#end()            " required
-filetype plugin indent on    " required
 " To ignore plugin indent changes, instead use:
+filetype plugin indent on    " required
 "filetype plugin on
 "
 " Brief help
@@ -52,7 +50,19 @@ set shiftwidth=4
 
 set foldenable
 
-map <A-Up> VdkP 
-map <A-Down> VdjP
+imap <A-Up> <Esc>VdkPe
+nmap <A-Up> VdkP
+vmap <A-Up> dkP
+imap <A-Down> <Esc>VdjPe
+nmap <A-Down> VdjP
+vmap <A-Down> djP
 map e i
 map E I
+imap <C-e> <Esc>
+vmap <C-e> <Esc>
+map <C-Left> gT
+map <C-Right> gt
+imap <C-Left> <Esc>gTe
+imap <C-Right> <Esc>gte
+command -nargs=1 FindReplace :%s/<args>/g
+
