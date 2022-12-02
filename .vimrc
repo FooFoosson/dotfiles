@@ -52,17 +52,16 @@ set foldenable
 
 imap <A-Up> <Esc>VdkPe
 nmap <A-Up> VdkP
-vmap <A-Up> dkP
+vmap <A-Up> dkPV
 imap <A-Down> <Esc>VdjPe
 nmap <A-Down> VdjP
 vmap <A-Down> djP
 map e i
 map E I
-imap <C-e> <Esc>
-vmap <C-e> <Esc>
-map <C-Left> gT
-map <C-Right> gt
-imap <C-Left> <Esc>gTe
-imap <C-Right> <Esc>gte
+imap <C-Space> <Esc>
+vmap <C-Space> <Esc>
+map <A-Left> gT
+map <A-Right> gt
+imap <A-Left> <Esc>gTe
+imap <A-Right> <Esc>gte
 command -nargs=1 FindReplace :%s/<args>/g
-
