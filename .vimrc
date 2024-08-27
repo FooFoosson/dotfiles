@@ -2,13 +2,15 @@ filetype off                  " required
 set clipboard=unnamedplus
 set number
 set nocompatible              " be iMproved, required
+set hlsearch
 " set the runtime path to include Vundle and initialize
 set rtp+=~/.vim/bundle/Vundle.vim
 call vundle#begin()
 
 Plugin 'VundleVim/Vundle.vim'
-
 Plugin 'valloric/youcompleteme'
+let g:ycm_enable_diagnostic_signs = 0
+let g:ycm_enable_diagnostic_highlighting = 0
 set completeopt-=preview
 
 Plugin 'bfrg/vim-cpp-modern'
@@ -45,23 +47,24 @@ filetype plugin indent on    " required
 " Put your non-Plugin stuff after this line
 
 colorscheme pablo
+set expandtab tabstop=4
 set tabstop=4
 set shiftwidth=4
 
 set foldenable
-
 imap <A-Up> <Esc>VdkPe
 nmap <A-Up> VdkP
-vmap <A-Up> dkPV
+vmap <A-Up> dkP
 imap <A-Down> <Esc>VdjPe
 nmap <A-Down> VdjP
 vmap <A-Down> djP
 map e i
 map E I
-imap <C-Space> <Esc>
-vmap <C-Space> <Esc>
+imap <C-e> <Esc>
+vmap <C-e> <Esc>
 map <A-Left> gT
 map <A-Right> gt
 imap <A-Left> <Esc>gTe
 imap <A-Right> <Esc>gte
 command -nargs=1 FindReplace :%s/<args>/g
+cnoreabbrev t tabnew
