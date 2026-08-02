@@ -1,6 +1,6 @@
 ---
 name: pre-push-pipeline
-description: The user's required workflow for changing any git repository - branch before editing, then run a gated pipeline (coverage, tests, lint, rebase onto the default branch, self-review, push, open a PR in Brave) with a live status bar. Use this skill whenever you are about to edit files in a git repo, and whenever the user says commit, push, ship, open a PR, raise a PR, land this, or asks to finish/wrap up a change - even if they only ask for part of it, since the earlier gates protect the push.
+description: The user's required workflow for changing any git repository - branch before editing, then run a gated pipeline (coverage, tests, lint, rebase onto the default branch, self-review, push, open a PR in Brave, then watch the PR until it is conflict-free) with a live status bar. Use this skill whenever you are about to edit files in a git repo, and whenever the user says commit, push, ship, open a PR, raise a PR, land this, or asks to finish/wrap up a change - even if they only ask for part of it, since the earlier gates protect the push.
 ---
 
 # Pre-push pipeline
@@ -21,7 +21,7 @@ after every turn — so it mutates in place above the prompt instead of scrollin
 down the transcript:
 
 ```
-┌ pre-push pipeline  3/8  ⎇ fix/token-refresh-race
+┌ pre-push pipeline  3/9  ⎇ fix/token-refresh-race
 │ ✓ Branch
 │ ✓ Coverage
 │ ✓ Tests
@@ -30,6 +30,7 @@ down the transcript:
 │ ○ Review
 │ ○ Push
 │ ○ PR
+│ ○ Watch PR
 └───
 ```
 
@@ -200,6 +201,41 @@ brave "$(~/.claude/skills/pre-push-pipeline/scripts/pr-url.sh)" &
 GitHub, GitLab and Bitbucket. Brave is at `/snap/bin/brave` here; `brave` on PATH
 resolves to it. Background the call (`&`) so a browser that stays in the foreground
 doesn't block the session.
+
+## Step 9 — Babysit the PR until it's mergeable
+
+The rebase in step 5 only proves the branch was current *then*. The default branch can
+move while you review, push, or open the PR — someone else merges, or an earlier PR of
+your own lands — and the PR goes conflicted after you thought you were done. A PR left
+sitting in that state is worse than no PR: it looks ready and isn't.
+
+So don't treat step 8 as the finish line. Check mergeability once the PR exists, and
+again after anything that could have moved the base:
+
+```bash
+gh pr view <n> --json mergeable,mergeStateStatus -q '.mergeable + " " + .mergeStateStatus'
+```
+
+`MERGEABLE CLEAN` means done. `CONFLICTING DIRTY` means go back — and *back* means step
+5, not a quick fix on top:
+
+1. `git fetch origin` and rebase onto the updated default branch.
+2. Resolve conflicts the same way step 5 demands — read both sides, keep the other
+   person's intent, note what you resolved and why.
+3. Re-run tests and lint if the resolution touched anything non-trivial. A conflict
+   resolved wrong compiles fine.
+4. **Re-do the review.** The diff that will land is not the diff you reviewed; at
+   minimum re-read `git diff origin/<default>...HEAD` and update the PR body's
+   CONFLICTS and RISK sections to cover the new resolution.
+5. `git push --force-with-lease`, then check mergeability again.
+
+Repeat until it comes back clean. Mark the step `fail` with a note while it's
+conflicted so the widget shows the PR is not actually ready.
+
+`UNKNOWN` means GitHub hasn't finished computing the merge state — wait a moment and
+re-check rather than reporting it as clean. If the conflict is beyond you, say so
+plainly and hand it over with the conflicting paths named; leaving it silently broken is
+the one unacceptable outcome.
 
 Finish by printing the completed widget inline (`python3 "$S" show`) alongside the PR
 URL, then `python3 "$S" clear` so the status line returns to its idle one-liner. The

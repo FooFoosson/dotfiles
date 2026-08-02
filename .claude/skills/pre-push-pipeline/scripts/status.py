@@ -30,6 +30,7 @@ STEPS = [
     ("review", "Review"),
     ("push", "Push"),
     ("pr", "PR"),
+    ("watch", "Watch PR"),
 ]
 MARKS = {"pending": "○", "run": "▶", "ok": "✓", "fail": "✗", "skip": "⊘"}
 KEYS = [k for k, _ in STEPS]
