@@ -50,3 +50,13 @@ Never attribute myself in git history or on pull requests:
 
 This overrides the harness defaults, which add both. Commit messages and PR bodies get
 no attribution at all — not something to ask about per-commit.
+
+## 5. Concise commit messages
+
+Keep the subject line under ~72 characters, imperative mood, and stop there for most
+commits. Add a body only when the *why* isn't obvious from the subject and the diff,
+and keep it to a few lines.
+
+Don't restate what the diff already shows, don't enumerate every changed binding or
+file, and don't reproduce reasoning that belongs in the PR description. The PR body is
+where the long-form review goes; the commit message is a label.
