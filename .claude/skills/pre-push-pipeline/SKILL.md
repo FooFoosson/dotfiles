@@ -69,13 +69,26 @@ Do this *before* touching a file, not before committing. If you're already deep 
 edits on the default branch, `git switch -c <branch>` still carries the working tree
 over — do it immediately.
 
+**Always fetch before branching.** Cutting from a stale local ref is how you get
+conflicts in step 5 that exist only because the branch point was old, and how you end
+up building on commits that have already merged.
+
 ```bash
+git fetch origin
 git rev-parse --abbrev-ref HEAD
-git switch -c <type>/<short-description>     # e.g. fix/token-refresh-race
+git switch -c <type>/<short-description> origin/<default>   # e.g. fix/token-refresh-race
 ```
 
+Branch from `origin/<default>` explicitly rather than from wherever HEAD happens to
+sit, unless the work genuinely builds on an unmerged branch. Resolve `<default>` as
+step 5 does: `git symbolic-ref refs/remotes/origin/HEAD`, else `origin/main`, else
+`origin/master`.
+
 If HEAD is already on a purpose-made branch for this work, that satisfies the step —
-mark it `ok` and move on. Name the branch after the change, not the tool.
+but fetch anyway and check the branch against the updated default. If its commits have
+since merged, or the default has moved on top of them, cut a fresh branch from
+`origin/<default>` instead of stacking onto a stale one. Name the branch after the
+change, not the tool.
 
 ## Step 2 — Coverage
 
