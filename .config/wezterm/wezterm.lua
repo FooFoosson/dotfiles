@@ -48,15 +48,51 @@ config.window_close_confirmation = 'NeverPrompt'
 config.initial_cols = 100
 config.initial_rows = 100
 
+-- Split the focused pane along its longer axis, so repeated splits grow a grid
+-- left-to-right, then top-to-bottom. wezterm gives the new pane focus itself.
+local function smart_split(window, pane)
+  local active
+  for _, p in ipairs(window:mux_window():active_tab():panes_with_info()) do
+    if p.is_active then
+      active = p
+      break
+    end
+  end
+
+  -- Compare pixels, not cells: a cell is roughly twice as tall as it is wide,
+  -- so cell counts would call almost every pane "wide".
+  local direction = 'Right'
+  if active and active.pixel_height > active.pixel_width then
+    direction = 'Down'
+  end
+
+  window:perform_action(
+    act.SplitPane { direction = direction, size = { Percent = 50 } },
+    pane
+  )
+end
+
 config.keys = {
+  -- split focused pane, focus follows to the new one: Ctrl+S
+  { key = 's', mods = 'CTRL', action = wezterm.action_callback(smart_split) },
+
+  -- close focused pane: Ctrl+W (closing the last pane closes the tab)
+  { key = 'w', mods = 'CTRL', action = act.CloseCurrentPane { confirm = false } },
+
+  -- move between panes: Ctrl+Arrow
+  { key = 'LeftArrow', mods = 'CTRL', action = act.ActivatePaneDirection 'Left' },
+  { key = 'RightArrow', mods = 'CTRL', action = act.ActivatePaneDirection 'Right' },
+  { key = 'UpArrow', mods = 'CTRL', action = act.ActivatePaneDirection 'Up' },
+  { key = 'DownArrow', mods = 'CTRL', action = act.ActivatePaneDirection 'Down' },
+
   -- new-tab: Ctrl+T (matches wezterm's default binding, set explicitly for clarity)
   { key = 't', mods = 'CTRL', action = act.SpawnTab 'CurrentPaneDomain' },
 
   -- new-window: Ctrl+Shift+T (wezterm defaults this combo to a new tab, override to match gnome)
   { key = 'T', mods = 'CTRL|SHIFT', action = act.SpawnWindow },
 
-  -- close-tab: Ctrl+W
-  { key = 'w', mods = 'CTRL', action = act.CloseCurrentTab { confirm = false } },
+  -- close-tab: unbound on Ctrl+W (that closes the focused pane now).
+  -- wezterm's default Ctrl+Shift+W still closes the whole tab.
 
   -- close-window: Ctrl+\
   -- wezterm has no single action for "close whole window", so close every
