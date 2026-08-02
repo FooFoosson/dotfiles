@@ -53,10 +53,9 @@ no attribution at all — not something to ask about per-commit.
 
 ## 5. Concise commit messages
 
-Keep the subject line under ~72 characters, imperative mood, and stop there for most
-commits. Add a body only when the *why* isn't obvious from the subject and the diff,
-and keep it to a few lines.
+One line. Subject only, imperative mood, aim for under 50 characters. **No body** —
+write one only when explicitly asked for it.
 
-Don't restate what the diff already shows, don't enumerate every changed binding or
-file, and don't reproduce reasoning that belongs in the PR description. The PR body is
-where the long-form review goes; the commit message is a label.
+The PR description carries the intent, the reasoning and the risk; repeating any of it
+in the commit is noise. Don't restate the diff, don't list changed files or settings.
+The commit message is a label, not an explanation.
