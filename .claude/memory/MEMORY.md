@@ -1,0 +1,3 @@
+- [Summary formatting](feedback_summary_formatting.md) — any end-of-turn recap section needs a bold ALL-CAPS heading (whatever its wording) + dash bullets
+- [Branch first + pre-push pipeline](feedback_branch_and_pipeline.md) — never edit on main; run the `pre-push-pipeline` skill before pushing
+- [No dev-cost weighting](feedback_no_dev_cost_weighting.md) — don't factor implementation effort/cost into technical recommendations
