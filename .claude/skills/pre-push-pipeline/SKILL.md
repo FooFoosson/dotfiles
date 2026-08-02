@@ -172,9 +172,12 @@ gh pr create --title "<title>" --body "<the step 6 review>" --base <default>
 brave "$(gh pr view --json url -q .url)" &
 ```
 
-Without `gh` (it is **not installed on this machine** as of writing — check with
-`command -v gh` before assuming), open the pre-filled PR form instead and paste the
-review into it:
+**Create the PR yourself — never hand the user a compare form to fill in.** `gh` is
+installed at `~/.local/bin/gh` (on PATH). The user's remote uses an `~/.ssh/config`
+host alias, so pass `--repo` explicitly if `gh` cannot infer it.
+
+Only if `gh` is genuinely unavailable or unauthenticated (`gh auth status`), fall back
+to the pre-filled form and paste the review into it:
 
 ```bash
 brave "$(~/.claude/skills/pre-push-pipeline/scripts/pr-url.sh)" &

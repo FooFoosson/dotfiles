@@ -13,11 +13,20 @@ url="$(git remote get-url "$remote")"
 # normalise scp-style (git@host:owner/repo.git) and https forms to host/owner/repo
 url="${url%.git}"
 url="${url#ssh://}"
+ssh_style=0
 case "$url" in
-    *@*:*) host="${url#*@}"; host="${host%%:*}"; path="${url#*:}" ;;
+    *@*:*) host="${url#*@}"; host="${host%%:*}"; path="${url#*:}"; ssh_style=1 ;;
     https://*|http://*) rest="${url#*://}"; rest="${rest#*@}"; host="${rest%%/*}"; path="${rest#*/}" ;;
     *) echo "unrecognised remote URL: $url" >&2; exit 1 ;;
 esac
+
+# An ssh remote's host is often an ~/.ssh/config alias (Host github-work ->
+# HostName github.com), which is meaningless to a browser. Ask ssh to resolve
+# it; for a real hostname this is a no-op.
+if [ "$ssh_style" = 1 ] && command -v ssh >/dev/null 2>&1; then
+    resolved="$(ssh -G "$host" 2>/dev/null | awk '/^hostname /{print $2; exit}')"
+    [ -n "$resolved" ] && host="$resolved"
+fi
 
 branch="$(git symbolic-ref --quiet --short HEAD)" || { echo "detached HEAD" >&2; exit 1; }
 
