@@ -145,6 +145,128 @@ function commit(){
 function search(){
     grep -rnw ./ -e "$1"
 }
+
+# worktree <path-to-repo>  -> create ./<repo>_<N+1> worktree off main, cd in, run claude
+# worktree remove [path]   -> remove worktree (confirms if work would be lost)
+function worktree(){
+    if [[ "$1" == "remove" ]]; then
+        shift
+        _worktree_remove "$@"
+        return $?
+    fi
+
+    local repo="$1"
+    if [[ -z "$repo" ]]; then
+        echo "usage: worktree <path-to-repo>" >&2
+        echo "       worktree remove [path]" >&2
+        return 1
+    fi
+    if [[ ! -d "$repo" ]] || ! git -C "$repo" rev-parse --git-dir >/dev/null 2>&1; then
+        echo "worktree: '$repo' is not a git repository" >&2
+        return 1
+    fi
+
+    # main worktree of the given repo, and the name we base new dirs on
+    local main_wt name
+    main_wt="$(git -C "$repo" worktree list --porcelain 2>/dev/null | head -1 | cut -d' ' -f2-)"
+    [[ -n "$main_wt" ]] || main_wt="${repo:A}"
+    name="${${main_wt:A}:t}"
+    name="${name%.git}"
+
+    # always branch off main (fall back to master), preferring the remote-tracking tip
+    local base r
+    for r in refs/remotes/origin/main refs/heads/main refs/remotes/origin/master refs/heads/master; do
+        if git -C "$main_wt" show-ref --verify --quiet "$r"; then
+            base="${r#refs/remotes/}"; base="${base#refs/heads/}"
+            break
+        fi
+    done
+    if [[ -z "$base" ]]; then
+        echo "worktree: no main or master branch found in '$main_wt'" >&2
+        return 1
+    fi
+
+    # highest existing <name>_<number>, counting both directories here and branches
+    local d suffix max=0
+    for d in ./${name}_*(N/) ${(f)"$(git -C "$main_wt" for-each-ref --format='%(refname:short)' "refs/heads/${name}_*")"}; do
+        suffix="${${d:t}#${name}_}"
+        [[ "$suffix" == <-> ]] || continue
+        (( 10#$suffix > max )) && max=$((10#$suffix))
+    done
+
+    local target="$PWD/${name}_$((max + 1))"
+    git -C "$main_wt" worktree add --no-track -b "${target:t}" "$target" "$base" || return 1
+
+    cd "$target" || return 1
+    claude
+}
+
+function _worktree_remove(){
+    local target="${1:-$PWD}"
+    if [[ ! -d "$target" ]] || ! git -C "$target" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        echo "worktree: '$target' is not a git worktree" >&2
+        return 1
+    fi
+
+    local root git_dir common_dir main_wt
+    root="$(git -C "$target" rev-parse --show-toplevel)"
+    git_dir="$(git -C "$root" rev-parse --absolute-git-dir)"
+    common_dir="$(git -C "$root" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+    if [[ "${git_dir:A}" == "${common_dir:A}" ]]; then
+        echo "worktree: '$root' is the main worktree, not a linked one - refusing to remove" >&2
+        return 1
+    fi
+    main_wt="$(git -C "$root" worktree list --porcelain | head -1 | cut -d' ' -f2-)"
+
+    # collect anything that would be lost
+    local -a problems
+    local dirty branch upstream ahead unpushed
+
+    dirty="$(git -C "$root" status --short)"
+    [[ -n "$dirty" ]] && problems+=("uncommitted changes / untracked files:"$'\n'"$(print -r -- "$dirty" | sed 's/^/      /')")
+
+    branch="$(git -C "$root" symbolic-ref --quiet --short HEAD 2>/dev/null)"
+    if [[ -z "$branch" ]]; then
+        # detached HEAD only loses work if no branch/remote ref contains it
+        if [[ -z "$(git -C "$root" for-each-ref --contains HEAD --count=1 refs/heads refs/remotes 2>/dev/null)" ]]; then
+            problems+=("detached HEAD at $(git -C "$root" rev-parse --short HEAD) - commits are on no branch")
+        fi
+    elif [[ -n "$(git -C "$root" remote)" ]]; then
+        upstream="$(git -C "$root" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null)"
+        if [[ -n "$upstream" ]]; then
+            ahead="$(git -C "$root" rev-list --count "$upstream..HEAD" 2>/dev/null)"
+            (( ahead > 0 )) && problems+=("$ahead commit(s) on '$branch' not pushed to '$upstream'")
+        else
+            unpushed="$(git -C "$root" rev-list --count HEAD --not --remotes 2>/dev/null)"
+            if (( unpushed > 0 )); then
+                problems+=("'$branch' has no upstream and $unpushed commit(s) are on no remote")
+            fi
+        fi
+    fi
+
+    local force=()
+    if (( ${#problems} )); then
+        local p
+        print -r -- "worktree: '$root' has work that would be lost:"
+        for p in "${problems[@]}"; do print -r -- "  - $p"; done
+        local reply
+        read -r "reply?Remove it anyway? [y/N] "
+        if [[ "$reply" != [yY]* ]]; then
+            echo "worktree: aborted"
+            return 1
+        fi
+        force=(--force)
+    fi
+
+    # step out of the worktree before deleting it
+    [[ "$PWD" == "$root"(|/*) ]] && cd "${root:h}"
+
+    git -C "$main_wt" worktree remove $force "$root" || return 1
+    [[ -d "$root" ]] && rm -rf "$root"
+    git -C "$main_wt" worktree prune
+    echo "worktree: removed $root${branch:+ (branch '$branch' kept)}"
+}
+
 function x()
 {
     echo $@

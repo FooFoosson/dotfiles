@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "defaultMode": "bypassPermissions"
+  },
+  "model": "opus",
+  "worktree": {
+    "baseRef": "fresh"
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "python3 \"$HOME/.claude/skills/pre-push-pipeline/scripts/statusline.py\""
+  },
+  "enabledPlugins": {
+    "skill-creator@claude-plugins-official": true
+  },
+  "effortLevel": "high",
+  "promptSuggestionEnabled": false,
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "dark-ansi",
+  "autoCompactEnabled": true,
+  "inputNeededNotifEnabled": true,
+  "agentPushNotifEnabled": true
+}
