@@ -45,8 +45,39 @@ config.audible_bell = 'Disabled'
 config.window_close_confirmation = 'NeverPrompt'
 
 -- gnome: default-size-columns/rows=100
+-- Applies to windows opened later (Ctrl+Shift+T); the startup window is sized
+-- by the gui-startup handler below instead.
 config.initial_cols = 100
 config.initial_rows = 100
+
+-- Put the startup window on the right half of the active screen. wezterm has no
+-- declarative option for this, so place the window from the gui-startup event.
+--
+-- Vertical space the window cannot use, in pixels: the GNOME top bar (32) plus
+-- wezterm's title bar (49). Neither mutter nor wezterm reports this, and mutter
+-- happily leaves an oversized window hanging off the bottom of the screen, so it
+-- has to be subtracted here. Raise it if the window overhangs after a shell theme
+-- or panel change.
+local DECORATION_HEIGHT = 81
+
+wezterm.on('gui-startup', function(cmd)
+  local screen = wezterm.gui.screens().active
+  local half = math.floor(screen.width / 2)
+
+  -- Positioning at spawn rather than afterwards: mutter applies its own placement
+  -- when it maps the window, and would put it back on the left half.
+  local args = cmd or {}
+  args.position = {
+    x = screen.x + half,
+    y = screen.y,
+    origin = 'ScreenCoordinateSystem',
+  }
+
+  local _, _, window = wezterm.mux.spawn_window(args)
+  local gui = window:gui_window()
+  gui:set_inner_size(half, screen.height - DECORATION_HEIGHT)
+  gui:set_position(screen.x + half, screen.y)
+end)
 
 -- Split the focused pane along its longer axis, so repeated splits grow a grid
 -- left-to-right, then top-to-bottom. wezterm gives the new pane focus itself.
@@ -79,11 +110,14 @@ config.keys = {
   -- close focused pane: Ctrl+W (closing the last pane closes the tab)
   { key = 'w', mods = 'CTRL', action = act.CloseCurrentPane { confirm = false } },
 
-  -- move between panes: Ctrl+Arrow
-  { key = 'LeftArrow', mods = 'CTRL', action = act.ActivatePaneDirection 'Left' },
-  { key = 'RightArrow', mods = 'CTRL', action = act.ActivatePaneDirection 'Right' },
-  { key = 'UpArrow', mods = 'CTRL', action = act.ActivatePaneDirection 'Up' },
-  { key = 'DownArrow', mods = 'CTRL', action = act.ActivatePaneDirection 'Down' },
+  -- move between panes: Alt+Arrow
+  -- wezterm matches either Alt key here: 'LEFT_ALT' parses but never matches a
+  -- real key event, since assignment lookup normalizes both Alt keys to ALT.
+  -- Right Alt is AltGr on most layouts and reports a different modifier anyway.
+  { key = 'LeftArrow', mods = 'ALT', action = act.ActivatePaneDirection 'Left' },
+  { key = 'RightArrow', mods = 'ALT', action = act.ActivatePaneDirection 'Right' },
+  { key = 'UpArrow', mods = 'ALT', action = act.ActivatePaneDirection 'Up' },
+  { key = 'DownArrow', mods = 'ALT', action = act.ActivatePaneDirection 'Down' },
 
   -- new-tab: Ctrl+T (matches wezterm's default binding, set explicitly for clarity)
   { key = 't', mods = 'CTRL', action = act.SpawnTab 'CurrentPaneDomain' },

@@ -20,7 +20,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-from status import KEYS, LABELS, MARKS, COLORS  # noqa: E402
+from status import KEYS, LABELS, MARKS, COLORS, worktree_label  # noqa: E402
 
 DIM = "\033[2m"
 RESET = "\033[0m"
@@ -71,6 +71,11 @@ def main():
     header = "┌ pre-push pipeline  %d/%d" % (done, len(KEYS))
     if head:
         header += "  ⎇ %s" % head
+    # which worktree this run belongs to - the one thing that tells two
+    # concurrent instances on the same repo apart at a glance
+    wt = worktree_label(git_dir)
+    if wt:
+        header += "  ·  %s" % wt
     out = [DIM + header + RESET]
     for k in KEYS:
         st = steps.get(k, "pending")
