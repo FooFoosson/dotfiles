@@ -2,9 +2,13 @@
 # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
 # for examples
 
-export EDITOR=vim
-export VISUAL=vim
-export PATH=/home/syrmia/bin:$PATH
+export DDAD_PATH=~/ddad
+alias gitupdate='cd $DDAD_PATH && git fetch --prune && git checkout origin/master && git submodule foreach "git fetch --prune && git checkout origin/master || :" && cd -'
+
+export PATH="/home/kagrenac/bin:$PATH"
+export PATH="/home/kagrenac/Downloads/pintos/src/utils:$PATH"
+export EDITOR='vim'
+export VISUAL='vim'
 
 # If not running interactively, don't do anything
 case $- in
@@ -15,9 +19,6 @@ esac
 # don't put duplicate lines or lines starting with space in the history.
 # See bash(1) for more options
 HISTCONTROL=ignoreboth
-
-# append to the history file, don't overwrite it
-shopt -s histappend
 
 # for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
 HISTSIZE=1000

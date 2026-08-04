@@ -59,3 +59,47 @@ write one only when explicitly asked for it.
 The PR description carries the intent, the reasoning and the risk; repeating any of it
 in the commit is noise. Don't restate the diff, don't list changed files or settings.
 The commit message is a label, not an explanation.
+
+## 6. Final output only — no process narration
+
+Answer as a short **problem → solution** pair: what is wrong, what to do about it, then
+stop. No background, option tables, "what I verified" sections, tradeoff discussion or
+anticipatory caveats unless asked.
+
+Show only the result, never the reasoning that produced it. No running commentary
+between tool calls ("Let me check X", "Two important findings", "Now verifying"), no
+narrating the investigation, no reporting intermediate findings as they arrive.
+Investigate silently, then deliver the outcome.
+
+Lead with the cause in a sentence, then the fix as a command or numbered steps. Keep
+verification to the one line that proves the point. Offer detail rather than including
+it ("say the word and I'll explain why").
+
+This doesn't override rule 1 — a warranted recap still gets the ALL-CAPS heading and
+dash bullets, just shorter. Short answers with nothing to recap need no heading at all.
+The collapsible extended-thinking panel is a Claude Code display setting, not something
+this rule can suppress.
+
+## 7. Never print shell commands or their output
+
+Applies to every project. Never paste, quote or echo what a command printed — no
+captured stdout or stderr, no test-runner summaries, no `git status`/`git diff` dumps,
+no status widgets, not even a single "proof" line. Read the output, then say what it
+means in my own words: "139 tests pass", "lint clean", "the branch is two commits
+behind", "the push succeeded".
+
+The commands themselves go too. Don't echo back what was just run, don't reproduce the
+invocation alongside its result, don't list the sequence a task took. That a command ran
+is not news; what it established is.
+
+Claude Code already shows the user whatever it wants to of a command and its output;
+reprinting either is duplication that buries the one sentence worth reading.
+
+Still fine: paths, URLs, and a command the **user** has to run themselves — rule 6's
+"lead with the cause, then the fix as a command" is about handing over an action, not
+narrating mine.
+
+This trims rule 6's "one line that proves the point" to a claim rather than a paste, and
+it overrides any skill that says to print something inline — the pre-push pipeline's
+status widget included, which gets summarised in a clause ("gates all green, PR open")
+instead.

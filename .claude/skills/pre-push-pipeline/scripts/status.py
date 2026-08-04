@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Track pre-push pipeline state and render it as a vertical widget.
 
-State lives in the repo's .git directory, so it never shows up in a diff and
-each repo tracks its own run. `init`, `set` and `clear` are silent - the live
-widget is drawn by statusline.py, which re-reads this state on every refresh.
+State lives in the git directory of the current worktree
+(.git/worktrees/<name>/pipeline-status.json for a linked one), so it never shows
+up in a diff and every worktree tracks its own run - which is what lets several
+Claude instances work one repo at once without sharing a widget. `init`, `set`
+and `clear` are silent - the live widget is drawn by statusline.py, which
+re-reads this state on every refresh.
 
     status.py init                          # all steps pending
     status.py set tests ok                  # mark one step (prints nothing)
@@ -22,7 +25,7 @@ import subprocess
 import sys
 
 STEPS = [
-    ("branch", "Branch"),
+    ("worktree", "Worktree"),
     ("coverage", "Coverage"),
     ("tests", "Tests"),
     ("lint", "Lint"),
@@ -31,21 +34,35 @@ STEPS = [
     ("push", "Push"),
     ("pr", "PR"),
     ("watch", "Watch PR"),
+    ("cleanup", "Cleanup"),
 ]
 MARKS = {"pending": "○", "run": "▶", "ok": "✓", "fail": "✗", "skip": "⊘"}
 KEYS = [k for k, _ in STEPS]
 LABELS = dict(STEPS)
 
 
-def state_path():
+def git_dir():
     try:
-        git_dir = subprocess.run(
+        return subprocess.run(
             ["git", "rev-parse", "--absolute-git-dir"],
             capture_output=True, text=True, check=True,
         ).stdout.strip()
     except (subprocess.CalledProcessError, FileNotFoundError):
-        git_dir = os.getcwd()
-    return os.path.join(git_dir, "pipeline-status.json")
+        return ""
+
+
+def state_path():
+    return os.path.join(git_dir() or os.getcwd(), "pipeline-status.json")
+
+
+def worktree_label(gd):
+    """Name of the linked worktree, or "" for the repo's own checkout.
+
+    A linked worktree's git dir is <common>/worktrees/<name>, so the name is
+    already in the path - no second git call needed to read it off.
+    """
+    parts = os.path.normpath(gd).split(os.sep)
+    return parts[-1] if len(parts) > 1 and parts[-2] == "worktrees" else ""
 
 
 def load():
@@ -78,7 +95,12 @@ def branch():
 def render(data, color=False):
     """Vertical widget - one step per line, notes inline beside the step."""
     head = branch()
-    lines = ["┌ pre-push pipeline" + (" · %s" % head if head else "")]
+    wt = worktree_label(git_dir())
+    title = "┌ pre-push pipeline"
+    for bit in (head, wt):
+        if bit:
+            title += " · %s" % bit
+    lines = [title]
     for k in KEYS:
         state = data["steps"][k]
         note = data["notes"].get(k)

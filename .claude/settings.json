@@ -13,10 +13,12 @@
   "enabledPlugins": {
     "skill-creator@claude-plugins-official": true
   },
-  "effortLevel": "high",
+  "effortLevel": "xhigh",
   "promptSuggestionEnabled": false,
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark-ansi",
+  "editorMode": "normal",
+  "preferredNotifChannel": "auto",
   "autoCompactEnabled": true,
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true

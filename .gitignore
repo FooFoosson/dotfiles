@@ -1,0 +1,3 @@
+# Byte-code left behind by running the pipeline scripts
+__pycache__/
+*.py[cod]
